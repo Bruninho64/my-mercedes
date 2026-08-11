@@ -17,13 +17,35 @@ main{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.car
 <section id="service" class="screen"><h2>Entretien de ma CLS</h2><div class="card" id="services"></div><button class="button gold" onclick="openExpense('entretien')">＋ Achat / dépense entretien</button></section>
 <section id="history" class="screen"><h2>Historique</h2><div class="card totals" id="historyTotals"></div><div class="card" id="historyList"></div></section>
 <section id="extra" class="screen"><h2>Extra / Tuning</h2><div class="card"><div class="value" id="extraTotal"></div><div class="small">Total des accessoires et modifications</div></div><div class="card" id="extraList"></div><button class="button gold" onclick="openExpense('extra')">＋ Ajouter un extra</button></section>
+<section id="ct" class="screen"><h2>Contrôle technique</h2>
+<div class="card">
+<div class="label">PROCHAIN CT</div><div class="value" id="ctNext">À renseigner</div>
+<div class="small" id="ctLast">Enregistrez votre dernier contrôle technique</div>
+</div>
+<div class="card" id="ctList"></div>
+<button class="button gold" onclick="openCT()">＋ Enregistrer un contrôle technique</button>
+</section>
 <section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="VIN"><button class="button" onclick="saveCar()">Enregistrer le véhicule</button></div><div class="card"><div class="title">Sauvegarde</div><div class="small">Exportez votre carnet pour pouvoir le restaurer plus tard.</div><button class="button" onclick="exportData()">Exporter la sauvegarde</button><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(this)"><button class="button" onclick="importFile.click()">Importer une sauvegarde</button></div></section>
 </main>
-<nav class="bottom"><button onclick="show('home')"><b>⌂</b>Accueil</button><button onclick="show('service')"><b>⚙</b>Entretien</button><button onclick="show('history')"><b>▤</b>Historique</button><button onclick="show('extra')"><b>✦</b>Extra</button><button onclick="show('car')"><b>♢</b>Véhicule</button></nav></div>
+<nav class="bottom"><button onclick="show('home')"><b>⌂</b>Accueil</button><button onclick="show('service')"><b>⚙</b>Entretien</button><button onclick="show('history')"><b>▤</b>Historique</button><button onclick="show('extra')"><b>✦</b>Extra</button><button onclick="show('ct')"><b>✓</b>CT</button><button onclick="show('car')"><b>♢</b>Véhicule</button></nav></div>
 
 <div class="modal" id="expenseModal"><div class="sheet"><h2 id="expenseTitle">Ajouter</h2><input id="eId" type="hidden"><input id="eType" type="hidden"><div class="label">NOM / PIÈCE</div><input class="input" id="eName" placeholder="Ex. Filtre K&N"><div class="row"><div><div class="label">PRIX €</div><input class="input" id="eCost" type="number" step=".01"></div><div><div class="label">DATE</div><input class="input" id="eDate" type="date"></div></div><div class="label">KILOMÉTRAGE</div><input class="input" id="eKm" type="number"><div class="label">CATÉGORIE</div><input class="input" id="eCategory" placeholder="Moteur, Audio, Esthétique..."><div class="label">RÉFÉRENCE DE LA PIÈCE</div><input class="input" id="eRef" placeholder="Référence"><div class="label">ACHETÉ CHEZ / SITE</div><input class="input" id="eShop" placeholder="Amazon, AUTODOC..."><div class="label">NOTES</div><textarea id="eNotes"></textarea><div class="label">CAPTURES / PHOTOS (plusieurs possibles)</div><input class="input" id="ePhotos" type="file" accept="image/*" multiple><div class="thumbs" id="editThumbs"></div><button class="button gold" onclick="saveExpense()">Enregistrer</button><button class="button" onclick="closeModal('expenseModal')">Annuler</button></div></div>
 
 <div class="modal" id="serviceModal"><div class="sheet"><h2>✓ Entretien effectué</h2><input id="sId" type="hidden"><div class="title" id="sName"></div><div class="label">DATE</div><input class="input" id="sDate" type="date"><div class="label">KILOMÉTRAGE</div><input class="input" id="sKm" type="number"><div class="label">COÛT € (optionnel)</div><input class="input" id="sCost" type="number" step=".01"><div class="label">RÉFÉRENCE / PIÈCES</div><input class="input" id="sRef"><div class="label">ACHETÉ CHEZ</div><input class="input" id="sShop"><div class="label">NOTES</div><textarea id="sNotes"></textarea><div class="label">CAPTURES / PHOTOS</div><input class="input" id="sPhotos" type="file" accept="image/*" multiple><button class="button gold" onclick="completeService()">Valider et calculer la prochaine échéance</button><button class="button" onclick="closeModal('serviceModal')">Annuler</button></div></div>
+
+<div class="modal" id="ctModal"><div class="sheet"><h2>Contrôle technique</h2>
+<input id="ctId" type="hidden">
+<div class="label">DATE DU CT</div><input class="input" id="ctDate" type="date">
+<div class="label">KILOMÉTRAGE</div><input class="input" id="ctKm" type="number">
+<div class="label">PRIX €</div><input class="input" id="ctCost" type="number" step=".01">
+<div class="label">CENTRE / LIEU</div><input class="input" id="ctPlace" placeholder="Ex. DEKRA Pau">
+<div class="label">RÉSULTAT</div><select id="ctResult"><option>Favorable</option><option>Défavorable</option><option>Défaillance critique</option></select>
+<div class="label">NOTES</div><textarea id="ctNotes"></textarea>
+<div class="label">PHOTO DU PROCÈS-VERBAL / CT</div><input class="input" id="ctPhotos" type="file" accept="image/*" multiple>
+<div class="thumbs" id="ctThumbs"></div>
+<button class="button gold" onclick="saveCT()">Enregistrer et calculer le prochain CT</button>
+<button class="button" onclick="closeModal('ctModal')">Annuler</button>
+</div></div>
 
 <div class="modal" id="detailModal"><div class="sheet" id="detailSheet"></div></div>
 
@@ -42,7 +64,7 @@ const serviceDefs=[
 {id:'battery',icon:'🔋',name:'Batterie 12 V',km:0,months:0},
 {id:'glow',icon:'🔥',name:'Bougies de préchauffage',km:0,months:0}
 ];
-function fresh(){return {km:306000,vin:'',events:[],services:{}}}
+function fresh(){return {km:306000,vin:'',events:[],services:{},cts:[]}}
 function load(){
  try{let x=localStorage.getItem(K);if(x)return Object.assign(fresh(),JSON.parse(x));
  let o=JSON.parse(localStorage.getItem(oldK)||'null');if(o){let n=fresh();n.km=o.km||n.km;n.vin=o.vin||'';n.events=(o.events||[]).map((e,i)=>({id:Date.now()+i,type:'entretien',name:e.name,cost:e.c||0,date:e.date,km:e.km,category:'Entretien',ref:'',shop:'',notes:'',photos:[]}));return n}}catch(e){} return fresh()}
@@ -77,6 +99,14 @@ function render(){
  historyTotals.innerHTML=`<b>Entretien :</b> ${euro(ent)}<br><b>Extras :</b> ${euro(ext)}<br><b>Total :</b> ${euro(ent+ext)}`;
  historyList.innerHTML=sorted.length?sorted.map(eventRow).join(''):'<div class="small">Aucune opération enregistrée.</div>';
  let extras=sorted.filter(x=>x.type==='extra');extraList.innerHTML=extras.length?extras.map(eventRow).join(''):'<div class="small">Aucun extra enregistré.</div>';
+ let cts=[...(d.cts||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ if(cts.length){
+   let c=cts[0], next=addMonths(c.date,24);
+   ctNext.textContent=frdate(next);
+   ctLast.textContent='Dernier CT : '+frdate(c.date)+' • '+fmtkm(c.km);
+   ctList.innerHTML=cts.map(c=>`<div class="item click" onclick="openCT(${c.id})"><div class="ico">✓</div><div class="grow"><div class="title">CT ${esc(c.result)}</div><div class="sub">${frdate(c.date)} • ${fmtkm(c.km)} • ${euro(c.cost)}</div><div class="sub">${esc(c.place||'Lieu non renseigné')} • prochain : ${frdate(addMonths(c.date,24))}</div>${photosHTML((c.photos||[]).slice(0,3))}</div><b>›</b></div>`).join('');
+ } else {ctNext.textContent='À renseigner';ctLast.textContent='Enregistrez votre dernier contrôle technique';ctList.innerHTML='<div class="small">Aucun contrôle technique enregistré.</div>';}
+
 }
 function eventRow(x){return `<div class="item click" onclick="detail(${x.id})"><div class="ico">${x.type==='extra'?'✦':'🔧'}</div><div class="grow"><div class="title">${esc(x.name)}</div><div class="sub">${frdate(x.date)} • ${fmtkm(x.km)} • ${euro(x.cost)}</div>${x.ref?`<div class="sub">Réf. ${esc(x.ref)}</div>`:''}${photosHTML((x.photos||[]).slice(0,3))}</div><b>›</b></div>`}
 function openExpense(type,id){
@@ -99,6 +129,23 @@ async function completeService(){
  d.services[s.id]={lastDate:date,lastKm:km,nextKm,nextDate};
  d.events.push({id:Date.now(),type:'entretien',serviceId:s.id,name:s.name,cost:Number(sCost.value||0),date,km,category:'Entretien',ref:sRef.value,shop:sShop.value,notes:sNotes.value,photos});
  d.km=Math.max(d.km,km);save();closeModal('serviceModal');render();alert('Entretien enregistré. Prochaine échéance recalculée automatiquement.')
+}
+
+function openCT(id){
+ let c=id?(d.cts||[]).find(x=>x.id===id):null;
+ ctId.value=c?.id||'';ctDate.value=c?.date||new Date().toISOString().slice(0,10);
+ ctKm.value=c?.km||d.km;ctCost.value=c?.cost||'';ctPlace.value=c?.place||'';
+ ctResult.value=c?.result||'Favorable';ctNotes.value=c?.notes||'';ctPhotos.value='';
+ ctThumbs.innerHTML=photosHTML(c?.photos||[]);ctModal.classList.add('show');
+}
+async function saveCT(){
+ if(!ctDate.value)return alert('Indiquez la date du contrôle technique.');
+ let id=Number(ctId.value)||Date.now(), old=(d.cts||[]).find(x=>x.id===id), newPhotos=await filesToData(ctPhotos);
+ let c={id,date:ctDate.value,km:Number(ctKm.value||d.km),cost:Number(ctCost.value||0),place:ctPlace.value,result:ctResult.value,notes:ctNotes.value,photos:[...(old?.photos||[]),...newPhotos]};
+ d.cts=d.cts||[]; if(old)d.cts[d.cts.indexOf(old)]=c;else d.cts.push(c);
+ d.km=Math.max(d.km,c.km);
+ d.events.push({id:Date.now()+1,type:'entretien',name:'Contrôle technique',cost:c.cost,date:c.date,km:c.km,category:'CT',ref:'',shop:c.place,notes:c.result+(c.notes?' — '+c.notes:''),photos:c.photos});
+ save();closeModal('ctModal');render();alert('CT enregistré. Prochaine échéance calculée à 24 mois.');
 }
 function saveCar(){d.km=Number(editkm.value||d.km);d.vin=vin.value.trim();save();render();alert('Véhicule et VIN sauvegardés.')}
 function exportData(){let b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='My_Mercedes_sauvegarde.json';a.click();URL.revokeObjectURL(a.href)}
