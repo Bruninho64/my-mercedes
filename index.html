@@ -1,10 +1,107 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0f14"><link rel="manifest" href="manifest.json"><title>My Mercedes</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#eef1f4;font-family:Arial,sans-serif;color:#151a20}.app{max-width:520px;margin:auto;min-height:100vh;padding-bottom:80px}header{background:linear-gradient(145deg,#070a0e,#202833);color:#fff;padding:20px 18px 25px;border-radius:0 0 28px 28px}.brand{font-weight:800;letter-spacing:1px}.hero{margin-top:25px}.hero h1{margin:4px 0;font-size:28px}.muted{color:#aeb6bf;font-size:12px}.km{font-size:25px;font-weight:800;color:#e7bd58;margin-top:10px}main{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#fff;border-radius:18px;padding:15px;margin-bottom:10px;box-shadow:0 4px 16px #0000000a}.label{font-size:10px;color:#7a838c;font-weight:800}.value{font-size:22px;font-weight:800;margin-top:9px}.small{font-size:12px;color:#727b84;margin-top:5px}h2{font-size:17px}.item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid #edf0f2}.ico{width:40px;height:40px;background:#f0f2f4;border-radius:12px;display:grid;place-items:center}.grow{flex:1}.title{font-weight:750;font-size:13px}.sub{font-size:11px;color:#7b838c;margin-top:4px}.button{border:0;border-radius:14px;padding:14px;width:100%;font-weight:800;background:#0d1218;color:#fff}.gold{background:#d8a93a;color:#111}.input{width:100%;padding:12px;border:1px solid #d8dde2;border-radius:12px;margin:5px 0 10px}.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:70px;background:#fff;border-top:1px solid #ddd;display:flex}.bottom button{flex:1;border:0;background:#fff;font-size:10px}.bottom b{display:block;font-size:19px}.screen{display:none}.active{display:block}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:end}.modal.show{display:flex}.sheet{background:#fff;width:min(520px,100%);margin:auto;padding:20px;border-radius:24px 24px 0 0}</style></head>
-<body><div class="app"><header><div class="brand">★ MY MERCEDES</div><div class="hero"><div class="muted">MON VÉHICULE</div><h1>CLS 320 CDI</h1><div class="muted">W219 • 2006 • OM642 V6 • AUTOMATIQUE</div><div class="km" id="km">306 000 KM</div></div></header><main>
-<section id="home" class="screen active"><h2>Vue d'ensemble</h2><div class="grid"><div class="card"><div class="label">PROCHAINE RÉVISION</div><div class="value">15 000 km</div><div class="small">Vidange + filtre à huile</div></div><div class="card"><div class="label">DÉPENSES</div><div class="value" id="total">0 €</div><div class="small">enregistrées</div></div></div><div class="card"><h2>À surveiller</h2><div id="watch"></div></div><button class="button gold" onclick="openM()">＋ Ajouter une facture / dépense</button></section>
-<section id="service" class="screen"><h2>Entretien de ma CLS</h2><div class="card" id="services"></div></section>
-<section id="history" class="screen"><h2>Historique</h2><div class="card" id="history"></div></section>
-<section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="Optionnel"><button class="button" onclick="saveCar()">Enregistrer</button></div></section></main>
-<nav class="bottom"><button onclick="show('home')"><b>⌂</b>Accueil</button><button onclick="show('service')"><b>⚙</b>Entretien</button><button onclick="show('history')"><b>▤</b>Historique</button><button onclick="show('car')"><b>♢</b>Véhicule</button></nav></div>
-<div class="modal" id="modal"><div class="sheet"><h2>Ajouter une dépense</h2><input class="input" id="desc" placeholder="Ex. Huile + filtre"><input class="input" id="cost" type="number" step=".01" placeholder="Montant €"><input class="input" id="date" type="date"><input class="input" id="ekm" type="number"><button class="button gold" onclick="add()">Enregistrer</button><br><br><button class="button" onclick="closeM()">Annuler</button></div></div>
-<script>const K='myMercedesFinal';let d=JSON.parse(localStorage.getItem(K)||'{"km":306000,"total":0,"events":[]}');const plan=[['🛢️','Vidange moteur + filtre','15 000 km / 12 mois'],['🌬️','Filtre à air','30 000 km / 24 mois'],['⛽','Filtre à gazole','30 000 km / 24 mois'],['⚙️','Vidange BVA + filtre','60 000 km'],['🛑','Liquide de frein','24 mois'],['💧','Liquide de refroidissement','Contrôle'],['♻️','EGR / admission','Contrôle'],['🔍','FAP / DPF','Diagnostic'],['🔋','Batterie 12 V','Contrôle'],['🔥','Bougies de préchauffage','Selon défauts']];function save(){localStorage.setItem(K,JSON.stringify(d))}function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');render()}function openM(){modal.classList.add('show');date.value=new Date().toISOString().slice(0,10);ekm.value=d.km}function closeM(){modal.classList.remove('show')}function add(){if(!desc.value.trim())return;let c=Number(cost.value||0);d.total+=c;d.km=Math.max(d.km,Number(ekm.value||d.km));d.events.unshift({name:desc.value.trim(),c,date:date.value,km:d.km});save();closeM();render()}function saveCar(){d.km=Number(editkm.value||d.km);save();render();alert('Véhicule enregistré')}function render(){km.textContent=d.km.toLocaleString('fr-FR')+' KM';total.textContent=d.total.toLocaleString('fr-FR',{minimumFractionDigits:2})+' €';watch.innerHTML=plan.slice(0,5).map(x=>`<div class="item"><div class="ico">${x[0]}</div><div class="grow"><div class="title">${x[1]}</div><div class="sub">${x[2]}</div></div></div>`).join('');services.innerHTML=plan.map(x=>`<div class="item"><div class="ico">${x[0]}</div><div class="grow"><div class="title">${x[1]}</div><div class="sub">${x[2]}</div></div></div>`).join('');history.innerHTML=d.events.length?d.events.map(x=>`<div class="item"><div class="ico">🔧</div><div><div class="title">${x.name}</div><div class="sub">${x.date} • ${x.km.toLocaleString('fr-FR')} km • ${x.c.toLocaleString('fr-FR')} €</div></div></div>`).join(''):'<div class="small">Aucune dépense enregistrée.</div>';editkm.value=d.km}render();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');</script></body></html>
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14"><link rel="manifest" href="manifest.json">
+<title>My Mercedes</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f4;font-family:Arial,sans-serif;color:#151a20}.app{max-width:520px;margin:auto;min-height:100vh;padding-bottom:88px}
+header{background:linear-gradient(145deg,#070a0e,#202833);color:#fff;padding:22px 20px 28px;border-radius:0 0 30px 30px}.brand{font-weight:800;letter-spacing:1px;font-size:18px}.hero{margin-top:28px}.hero h1{margin:6px 0;font-size:30px}.muted{color:#aeb6bf;font-size:12px}.km{font-size:28px;font-weight:800;color:#e7bd58;margin-top:14px}
+main{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:#fff;border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 4px 16px #0000000a}.label{font-size:10px;color:#7a838c;font-weight:800}.value{font-size:21px;font-weight:800;margin-top:8px}.small,.sub{font-size:12px;color:#727b84;margin-top:5px}h2{font-size:19px}
+.item{display:flex;gap:11px;padding:13px 0;border-bottom:1px solid #edf0f2;align-items:center}.item:last-child{border-bottom:0}.ico{width:44px;height:44px;background:#f0f2f4;border-radius:13px;display:grid;place-items:center;flex:0 0 auto}.grow{flex:1;min-width:0}.title{font-weight:750;font-size:14px}.button{border:0;border-radius:14px;padding:13px;width:100%;font-weight:800;background:#0d1218;color:#fff;margin-top:6px}.gold{background:#d8a93a;color:#111}.danger{background:#b52222}.mini{width:auto;padding:8px 10px;font-size:11px;margin:3px}.input,select,textarea{width:100%;padding:12px;border:1px solid #d8dde2;border-radius:12px;margin:5px 0 10px;background:white;font:inherit}textarea{min-height:75px}
+.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:76px;background:#fff;border-top:1px solid #ddd;display:flex;z-index:5}.bottom button{flex:1;border:0;background:#fff;font-size:9px;padding:5px 1px}.bottom b{display:block;font-size:19px;margin-bottom:4px}.screen{display:none}.active{display:block}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:end;z-index:20}.modal.show{display:flex}.sheet{background:#fff;width:min(520px,100%);margin:auto;padding:20px;border-radius:24px 24px 0 0;max-height:90vh;overflow:auto}.row{display:flex;gap:7px}.row>*{flex:1}.pill{font-size:11px;font-weight:800;padding:5px 8px;border-radius:99px;display:inline-block}.ok{background:#dff4e5;color:#187339}.soon{background:#fff0c9;color:#946300}.late{background:#ffe0e0;color:#a51e1e}.thumbs{display:flex;gap:7px;overflow:auto;margin:8px 0}.thumbs img{width:78px;height:78px;object-fit:cover;border-radius:10px;border:1px solid #ddd}.click{cursor:pointer}.totals{font-size:13px;line-height:1.8}.hidden{display:none}
+</style></head>
+<body><div class="app"><header><div class="brand">★ MY MERCEDES</div><div class="hero"><div class="muted">MON VÉHICULE</div><h1>CLS 320 CDI</h1><div class="muted">W219 • 2006 • OM642 V6 • AUTOMATIQUE</div><div class="km" id="topKm"></div></div></header>
+<main>
+<section id="home" class="screen active"><h2>Vue d'ensemble</h2><div class="grid"><div class="card"><div class="label">PROCHAINE RÉVISION</div><div class="value" id="nextDue">—</div><div class="small" id="nextName">À renseigner</div></div><div class="card"><div class="label">TOTAL INVESTI</div><div class="value" id="grandTotal">0 €</div><div class="small">entretien + extras</div></div></div><div class="card"><h2>À surveiller</h2><div id="watch"></div></div><button class="button gold" onclick="openExpense('entretien')">＋ Ajouter une dépense</button></section>
+<section id="service" class="screen"><h2>Entretien de ma CLS</h2><div class="card" id="services"></div><button class="button gold" onclick="openExpense('entretien')">＋ Achat / dépense entretien</button></section>
+<section id="history" class="screen"><h2>Historique</h2><div class="card totals" id="historyTotals"></div><div class="card" id="historyList"></div></section>
+<section id="extra" class="screen"><h2>Extra / Tuning</h2><div class="card"><div class="value" id="extraTotal"></div><div class="small">Total des accessoires et modifications</div></div><div class="card" id="extraList"></div><button class="button gold" onclick="openExpense('extra')">＋ Ajouter un extra</button></section>
+<section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="VIN"><button class="button" onclick="saveCar()">Enregistrer le véhicule</button></div><div class="card"><div class="title">Sauvegarde</div><div class="small">Exportez votre carnet pour pouvoir le restaurer plus tard.</div><button class="button" onclick="exportData()">Exporter la sauvegarde</button><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(this)"><button class="button" onclick="importFile.click()">Importer une sauvegarde</button></div></section>
+</main>
+<nav class="bottom"><button onclick="show('home')"><b>⌂</b>Accueil</button><button onclick="show('service')"><b>⚙</b>Entretien</button><button onclick="show('history')"><b>▤</b>Historique</button><button onclick="show('extra')"><b>✦</b>Extra</button><button onclick="show('car')"><b>♢</b>Véhicule</button></nav></div>
+
+<div class="modal" id="expenseModal"><div class="sheet"><h2 id="expenseTitle">Ajouter</h2><input id="eId" type="hidden"><input id="eType" type="hidden"><div class="label">NOM / PIÈCE</div><input class="input" id="eName" placeholder="Ex. Filtre K&N"><div class="row"><div><div class="label">PRIX €</div><input class="input" id="eCost" type="number" step=".01"></div><div><div class="label">DATE</div><input class="input" id="eDate" type="date"></div></div><div class="label">KILOMÉTRAGE</div><input class="input" id="eKm" type="number"><div class="label">CATÉGORIE</div><input class="input" id="eCategory" placeholder="Moteur, Audio, Esthétique..."><div class="label">RÉFÉRENCE DE LA PIÈCE</div><input class="input" id="eRef" placeholder="Référence"><div class="label">ACHETÉ CHEZ / SITE</div><input class="input" id="eShop" placeholder="Amazon, AUTODOC..."><div class="label">NOTES</div><textarea id="eNotes"></textarea><div class="label">CAPTURES / PHOTOS (plusieurs possibles)</div><input class="input" id="ePhotos" type="file" accept="image/*" multiple><div class="thumbs" id="editThumbs"></div><button class="button gold" onclick="saveExpense()">Enregistrer</button><button class="button" onclick="closeModal('expenseModal')">Annuler</button></div></div>
+
+<div class="modal" id="serviceModal"><div class="sheet"><h2>✓ Entretien effectué</h2><input id="sId" type="hidden"><div class="title" id="sName"></div><div class="label">DATE</div><input class="input" id="sDate" type="date"><div class="label">KILOMÉTRAGE</div><input class="input" id="sKm" type="number"><div class="label">COÛT € (optionnel)</div><input class="input" id="sCost" type="number" step=".01"><div class="label">RÉFÉRENCE / PIÈCES</div><input class="input" id="sRef"><div class="label">ACHETÉ CHEZ</div><input class="input" id="sShop"><div class="label">NOTES</div><textarea id="sNotes"></textarea><div class="label">CAPTURES / PHOTOS</div><input class="input" id="sPhotos" type="file" accept="image/*" multiple><button class="button gold" onclick="completeService()">Valider et calculer la prochaine échéance</button><button class="button" onclick="closeModal('serviceModal')">Annuler</button></div></div>
+
+<div class="modal" id="detailModal"><div class="sheet" id="detailSheet"></div></div>
+
+<script>
+const K='myMercedesV4';
+const oldK='myMercedesFinal';
+const serviceDefs=[
+{id:'oil',icon:'🛢️',name:'Vidange moteur + filtre',km:15000,months:12},
+{id:'air',icon:'🌬️',name:'Filtre à air',km:30000,months:24},
+{id:'fuel',icon:'⛽',name:'Filtre à gazole',km:30000,months:24},
+{id:'bva',icon:'⚙️',name:'Vidange BVA + filtre',km:60000,months:0},
+{id:'brake',icon:'🛑',name:'Liquide de frein',km:0,months:24},
+{id:'cool',icon:'💧',name:'Liquide de refroidissement',km:0,months:0},
+{id:'egr',icon:'♻️',name:'EGR / admission',km:0,months:0},
+{id:'dpf',icon:'🔍',name:'FAP / DPF',km:0,months:0},
+{id:'battery',icon:'🔋',name:'Batterie 12 V',km:0,months:0},
+{id:'glow',icon:'🔥',name:'Bougies de préchauffage',km:0,months:0}
+];
+function fresh(){return {km:306000,vin:'',events:[],services:{}}}
+function load(){
+ try{let x=localStorage.getItem(K);if(x)return Object.assign(fresh(),JSON.parse(x));
+ let o=JSON.parse(localStorage.getItem(oldK)||'null');if(o){let n=fresh();n.km=o.km||n.km;n.vin=o.vin||'';n.events=(o.events||[]).map((e,i)=>({id:Date.now()+i,type:'entretien',name:e.name,cost:e.c||0,date:e.date,km:e.km,category:'Entretien',ref:'',shop:'',notes:'',photos:[]}));return n}}catch(e){} return fresh()}
+let d=load();function save(){localStorage.setItem(K,JSON.stringify(d))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function euro(n){return Number(n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function fmtkm(n){return Number(n||0).toLocaleString('fr-FR')+' km'}
+function addMonths(date,m){if(!date||!m)return'';let x=new Date(date+'T12:00:00');x.setMonth(x.getMonth()+m);return x.toISOString().slice(0,10)}
+function frdate(x){if(!x)return'—';let p=x.split('-');return p.length==3?`${p[2]}/${p[1]}/${p[0]}`:x}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');render()}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function photosHTML(p){return (p||[]).length?`<div class="thumbs">${p.map(x=>`<img src="${x}">`).join('')}</div>`:''}
+function status(s){
+ let def=serviceDefs.find(x=>x.id===s.id), rec=d.services[s.id]; if(!rec)return {text:'Jamais enregistré',cls:'soon'};
+ let late=false,soon=false, parts=[];
+ if(rec.nextKm){parts.push(fmtkm(rec.nextKm));let diff=rec.nextKm-d.km;late|=diff<=0;soon|=diff>0&&diff<=2000}
+ if(rec.nextDate){parts.push(frdate(rec.nextDate));let days=(new Date(rec.nextDate)-new Date())/86400000;late|=days<=0;soon|=days>0&&days<=30}
+ if(!parts.length)return{text:'Contrôle selon besoin',cls:'ok'};
+ return{text:'Prochain : '+parts.join(' • '),cls:late?'late':soon?'soon':'ok'}
+}
+function render(){
+ topKm.textContent=fmtkm(d.km).toUpperCase(); editkm.value=d.km; vin.value=d.vin||'';
+ let ent=d.events.filter(x=>x.type==='entretien').reduce((a,x)=>a+Number(x.cost||0),0);
+ let ext=d.events.filter(x=>x.type==='extra').reduce((a,x)=>a+Number(x.cost||0),0);
+ grandTotal.textContent=euro(ent+ext);extraTotal.textContent=euro(ext);
+ services.innerHTML=serviceDefs.map(s=>{let st=status(s),r=d.services[s.id];return `<div class="item"><div class="ico">${s.icon}</div><div class="grow"><div class="title">${s.name}</div><div class="sub">${s.km?fmtkm(s.km):''}${s.km&&s.months?' / ':''}${s.months?s.months+' mois':(!s.km?'Contrôle':'')}</div><span class="pill ${st.cls}">${st.text}</span>${r?`<div class="sub">Dernier : ${frdate(r.lastDate)} • ${fmtkm(r.lastKm)}</div>`:''}<button class="button mini" onclick="openService('${s.id}')">✓ Entretien effectué</button></div></div>`}).join('');
+ let candidates=serviceDefs.map(s=>({s,st:status(s),r:d.services[s.id]})).filter(x=>x.r&&(x.r.nextKm||x.r.nextDate));
+ candidates.sort((a,b)=>((a.r.nextKm||1e12)-d.km)-((b.r.nextKm||1e12)-d.km));
+ if(candidates.length){let x=candidates[0];nextDue.textContent=x.r.nextKm?fmtkm(x.r.nextKm):frdate(x.r.nextDate);nextName.textContent=x.s.name}else{nextDue.textContent='À renseigner';nextName.textContent='Validez votre premier entretien'}
+ watch.innerHTML=serviceDefs.slice(0,5).map(s=>{let st=status(s);return `<div class="item"><div class="ico">${s.icon}</div><div class="grow"><div class="title">${s.name}</div><span class="pill ${st.cls}">${st.text}</span></div></div>`}).join('');
+ let sorted=[...d.events].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Number(b.id)-Number(a.id));
+ historyTotals.innerHTML=`<b>Entretien :</b> ${euro(ent)}<br><b>Extras :</b> ${euro(ext)}<br><b>Total :</b> ${euro(ent+ext)}`;
+ historyList.innerHTML=sorted.length?sorted.map(eventRow).join(''):'<div class="small">Aucune opération enregistrée.</div>';
+ let extras=sorted.filter(x=>x.type==='extra');extraList.innerHTML=extras.length?extras.map(eventRow).join(''):'<div class="small">Aucun extra enregistré.</div>';
+}
+function eventRow(x){return `<div class="item click" onclick="detail(${x.id})"><div class="ico">${x.type==='extra'?'✦':'🔧'}</div><div class="grow"><div class="title">${esc(x.name)}</div><div class="sub">${frdate(x.date)} • ${fmtkm(x.km)} • ${euro(x.cost)}</div>${x.ref?`<div class="sub">Réf. ${esc(x.ref)}</div>`:''}${photosHTML((x.photos||[]).slice(0,3))}</div><b>›</b></div>`}
+function openExpense(type,id){
+ let x=id?d.events.find(e=>e.id===id):null;eId.value=x?.id||'';eType.value=type||x?.type||'entretien';expenseTitle.textContent=x?'Modifier la fiche':(eType.value==='extra'?'Ajouter un extra':'Ajouter une dépense entretien');
+ eName.value=x?.name||'';eCost.value=x?.cost||'';eDate.value=x?.date||new Date().toISOString().slice(0,10);eKm.value=x?.km||d.km;eCategory.value=x?.category||'';eRef.value=x?.ref||'';eShop.value=x?.shop||'';eNotes.value=x?.notes||'';ePhotos.value='';editThumbs.innerHTML=photosHTML(x?.photos||[]);expenseModal.classList.add('show')
+}
+async function filesToData(input){let fs=[...input.files];return Promise.all(fs.map(f=>new Promise(res=>{let r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)})))}
+async function saveExpense(){
+ if(!eName.value.trim())return alert('Indique le nom de la pièce ou de la dépense.');
+ let id=Number(eId.value)||Date.now(),old=d.events.find(x=>x.id===id),newPhotos=await filesToData(ePhotos);
+ let x={id,type:eType.value,name:eName.value.trim(),cost:Number(eCost.value||0),date:eDate.value,km:Number(eKm.value||d.km),category:eCategory.value,ref:eRef.value,shop:eShop.value,notes:eNotes.value,photos:[...(old?.photos||[]),...newPhotos]};
+ if(old)d.events[d.events.indexOf(old)]=x;else d.events.push(x);d.km=Math.max(d.km,x.km);save();closeModal('expenseModal');render()
+}
+function detail(id){let x=d.events.find(e=>e.id===id);if(!x)return;detailSheet.innerHTML=`<h2>${esc(x.name)}</h2><div class="sub">${x.type==='extra'?'Extra / Tuning':'Entretien'}</div>${photosHTML(x.photos)}<p><b>Date :</b> ${frdate(x.date)}<br><b>Kilométrage :</b> ${fmtkm(x.km)}<br><b>Prix :</b> ${euro(x.cost)}<br><b>Catégorie :</b> ${esc(x.category||'—')}<br><b>Référence :</b> ${esc(x.ref||'—')}<br><b>Acheté chez :</b> ${esc(x.shop||'—')}</p>${x.notes?`<p><b>Notes :</b><br>${esc(x.notes)}</p>`:''}<div class="row"><button class="button" onclick="closeModal('detailModal');openExpense('${x.type}',${x.id})">Modifier</button><button class="button danger" onclick="deleteEvent(${x.id})">Supprimer</button></div><button class="button" onclick="closeModal('detailModal')">Fermer</button>`;detailModal.classList.add('show')}
+function deleteEvent(id){if(confirm('Supprimer cette fiche ?')){d.events=d.events.filter(x=>x.id!==id);save();closeModal('detailModal');render()}}
+function openService(id){let s=serviceDefs.find(x=>x.id===id);sId.value=id;sName.textContent=s.name;sDate.value=new Date().toISOString().slice(0,10);sKm.value=d.km;sCost.value='';sRef.value='';sShop.value='';sNotes.value='';sPhotos.value='';serviceModal.classList.add('show')}
+async function completeService(){
+ let s=serviceDefs.find(x=>x.id===sId.value),date=sDate.value,km=Number(sKm.value||d.km),photos=await filesToData(sPhotos);
+ let nextKm=s.km?km+s.km:null,nextDate=s.months?addMonths(date,s.months):null;
+ d.services[s.id]={lastDate:date,lastKm:km,nextKm,nextDate};
+ d.events.push({id:Date.now(),type:'entretien',serviceId:s.id,name:s.name,cost:Number(sCost.value||0),date,km,category:'Entretien',ref:sRef.value,shop:sShop.value,notes:sNotes.value,photos});
+ d.km=Math.max(d.km,km);save();closeModal('serviceModal');render();alert('Entretien enregistré. Prochaine échéance recalculée automatiquement.')
+}
+function saveCar(){d.km=Number(editkm.value||d.km);d.vin=vin.value.trim();save();render();alert('Véhicule et VIN sauvegardés.')}
+function exportData(){let b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='My_Mercedes_sauvegarde.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{d=Object.assign(fresh(),JSON.parse(r.result));save();render();alert('Sauvegarde restaurée.')}catch(e){alert('Fichier de sauvegarde invalide.')}};r.readAsText(f)}
+render();save();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
+</script></body></html>
