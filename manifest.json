@@ -1,24 +1,24 @@
 {
-  "id": "/my-mercedes/",
+  "id": "./",
   "name": "My Mercedes",
   "short_name": "My Mercedes",
-  "start_url": "/my-mercedes/",
-  "scope": "/my-mercedes/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0b0f14",
   "theme_color": "#0b0f14",
   "icons": [
     {
-      "src": "/my-mercedes/icône-v2-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/my-mercedes/icône-v2-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
