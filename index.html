@@ -26,7 +26,7 @@ main{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.car
 <button class="button gold" onclick="openCT()">＋ Enregistrer un contrôle technique</button>
 </section>
 <section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="VIN"><button class="button" onclick="saveCar()">Enregistrer le véhicule</button></div><div class="card">
-<div class="title">💾 Sauvegarde locale</div>
+<div class="title">💾 Sauvegarde locale — V6 corrigée</div>
 <div class="small">Les sauvegardes restent sur ce téléphone, sans compte ni cloud. Une sauvegarde automatique est créée après les modifications importantes.</div>
 <div class="row"><button class="button gold" onclick="createLocalBackup(true)">Créer maintenant</button><button class="button" onclick="renderLocalBackups()">Actualiser</button></div>
 <div id="localBackupStatus" class="small"></div>
@@ -236,7 +236,50 @@ async function renderLocalBackups(){
 }
 
 function exportData(){let b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='My_Mercedes_sauvegarde.json';a.click();URL.revokeObjectURL(a.href)}
-function importData(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{d=Object.assign(fresh(),JSON.parse(r.result));save();render();createLocalBackup(true);alert('Sauvegarde restaurée.')}catch(e){alert('Fichier de sauvegarde invalide.')}};r.readAsText(f)}
+function normalizeBackup(x){
+ if(!x||typeof x!=='object')throw new Error('format');
+ const g=(...k)=>{for(const n of k)if(x[n]!==undefined)return x[n]};
+ const km=Number(g('km','kilometrage','kilométrage'));
+ const events=g('events','evenements','événements');
+ const services=g('services','entretiens');
+ const cts=g('cts','ct','controles_techniques','contrôles_techniques');
+ if(!Number.isFinite(km)||!Array.isArray(events))throw new Error('backup');
+ return {
+  km:km,
+  vin:String(g('vin')||''),
+  events:events,
+  services:(services&&typeof services==='object')?services:{},
+  cts:Array.isArray(cts)?cts:[]
+ };
+}
+function importData(inp){
+ const f=inp.files&&inp.files[0]; if(!f)return;
+ const r=new FileReader();
+ r.onload=async()=>{
+  try{
+   const parsed=JSON.parse(r.result);
+   const restored=normalizeBackup(parsed);
+   const total=(restored.events||[]).reduce((s,e)=>s+(Number(e.cost)||0),0);
+   const ok=confirm(
+    'Sauvegarde vérifiée :\\n'+
+    restored.km.toLocaleString('fr-FR')+' km\\n'+
+    restored.events.length+' opérations\\n'+
+    total.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €\\n\\nRestaurer ces données ?'
+   );
+   if(!ok){inp.value='';return;}
+   d=Object.assign(fresh(),restored);
+   localStorage.setItem(K,JSON.stringify(d));
+   await createLocalBackup(true);
+   render();
+   inp.value='';
+   alert('Sauvegarde restaurée avec succès.');
+  }catch(e){
+   inp.value='';
+   alert("Fichier de sauvegarde invalide. Aucune donnée actuelle n'a été modifiée.");
+  }
+ };
+ r.readAsText(f);
+}
 render();save();renderLocalBackups();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
