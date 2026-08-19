@@ -25,7 +25,20 @@ main{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.car
 <div class="card" id="ctList"></div>
 <button class="button gold" onclick="openCT()">＋ Enregistrer un contrôle technique</button>
 </section>
-<section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="VIN"><button class="button" onclick="saveCar()">Enregistrer le véhicule</button></div><div class="card"><div class="title">Sauvegarde</div><div class="small">Exportez votre carnet pour pouvoir le restaurer plus tard.</div><button class="button" onclick="exportData()">Exporter la sauvegarde</button><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(this)"><button class="button" onclick="importFile.click()">Importer une sauvegarde</button></div></section>
+<section id="car" class="screen"><h2>Ma Mercedes</h2><div class="card"><div class="label">KILOMÉTRAGE</div><input class="input" id="editkm" type="number"><div class="label">VIN</div><input class="input" id="vin" placeholder="VIN"><button class="button" onclick="saveCar()">Enregistrer le véhicule</button></div><div class="card">
+<div class="title">💾 Sauvegarde locale</div>
+<div class="small">Les sauvegardes restent sur ce téléphone, sans compte ni cloud. Une sauvegarde automatique est créée après les modifications importantes.</div>
+<div class="row"><button class="button gold" onclick="createLocalBackup(true)">Créer maintenant</button><button class="button" onclick="renderLocalBackups()">Actualiser</button></div>
+<div id="localBackupStatus" class="small"></div>
+<div id="localBackups" style="margin-top:10px"></div>
+</div>
+<div class="card">
+<div class="title">📁 Copie de sécurité fichier</div>
+<div class="small">Téléchargez aussi une copie .json sur le téléphone. Elle permet de restaurer vos données même après une réinstallation.</div>
+<button class="button" onclick="exportData()">Télécharger une copie .json</button>
+<input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(this)">
+<button class="button" onclick="importFile.click()">Restaurer depuis un fichier .json</button>
+</div></section>
 </main>
 <nav class="bottom"><button onclick="show('home')"><b>⌂</b>Accueil</button><button onclick="show('service')"><b>⚙</b>Entretien</button><button onclick="show('history')"><b>▤</b>Historique</button><button onclick="show('extra')"><b>✦</b>Extra</button><button onclick="show('ct')"><b>✓</b>CT</button><button onclick="show('car')"><b>♢</b>Véhicule</button></nav></div>
 
@@ -68,13 +81,19 @@ function fresh(){return {km:306000,vin:'',events:[],services:{},cts:[]}}
 function load(){
  try{let x=localStorage.getItem(K);if(x)return Object.assign(fresh(),JSON.parse(x));
  let o=JSON.parse(localStorage.getItem(oldK)||'null');if(o){let n=fresh();n.km=o.km||n.km;n.vin=o.vin||'';n.events=(o.events||[]).map((e,i)=>({id:Date.now()+i,type:'entretien',name:e.name,cost:e.c||0,date:e.date,km:e.km,category:'Entretien',ref:'',shop:'',notes:'',photos:[]}));return n}}catch(e){} return fresh()}
-let d=load();function save(){localStorage.setItem(K,JSON.stringify(d))}
+let d=load();
+let _backupTimer=null;
+function save(){
+ localStorage.setItem(K,JSON.stringify(d));
+ clearTimeout(_backupTimer);
+ _backupTimer=setTimeout(()=>createLocalBackup(false),700);
+}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function euro(n){return Number(n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
 function fmtkm(n){return Number(n||0).toLocaleString('fr-FR')+' km'}
 function addMonths(date,m){if(!date||!m)return'';let x=new Date(date+'T12:00:00');x.setMonth(x.getMonth()+m);return x.toISOString().slice(0,10)}
 function frdate(x){if(!x)return'—';let p=x.split('-');return p.length==3?`${p[2]}/${p[1]}/${p[0]}`:x}
-function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');render()}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');render();if(id==='car')renderLocalBackups()}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 function photosHTML(p){return (p||[]).length?`<div class="thumbs">${p.map(x=>`<img src="${x}">`).join('')}</div>`:''}
 function status(s){
@@ -148,7 +167,77 @@ async function saveCT(){
  save();closeModal('ctModal');render();alert('CT enregistré. Prochaine échéance calculée à 24 mois.');
 }
 function saveCar(){d.km=Number(editkm.value||d.km);d.vin=vin.value.trim();save();render();alert('Véhicule et VIN sauvegardés.')}
+
+const BACKUP_DB='MyMercedesLocalBackups';
+const BACKUP_STORE='backups';
+function openBackupDB(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open(BACKUP_DB,1);
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(BACKUP_STORE))db.createObjectStore(BACKUP_STORE,{keyPath:'id',autoIncrement:true})};
+  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+ });
+}
+async function getLocalBackups(){
+ try{
+  const db=await openBackupDB();
+  return await new Promise((resolve,reject)=>{
+   const tx=db.transaction(BACKUP_STORE,'readonly'),req=tx.objectStore(BACKUP_STORE).getAll();
+   req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>b.created-a.created));req.onerror=()=>reject(req.error);
+  });
+ }catch(e){return[]}
+}
+async function trimLocalBackups(){
+ const all=await getLocalBackups();if(all.length<=15)return;
+ const db=await openBackupDB(),tx=db.transaction(BACKUP_STORE,'readwrite'),st=tx.objectStore(BACKUP_STORE);
+ all.slice(15).forEach(x=>st.delete(x.id));
+}
+async function createLocalBackup(manual=false){
+ try{
+  const db=await openBackupDB();
+  const now=Date.now();
+  const all=await getLocalBackups();
+  if(!manual && all.length && now-all[0].created<30000)return;
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction(BACKUP_STORE,'readwrite');
+   tx.objectStore(BACKUP_STORE).add({created:now,manual:!!manual,data:JSON.parse(JSON.stringify(d))});
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+  });
+  await trimLocalBackups();
+  if(manual)alert('Sauvegarde locale créée sur ce téléphone.');
+  renderLocalBackups();
+ }catch(e){
+  if(manual)alert("Impossible de créer la sauvegarde locale sur ce navigateur.");
+ }
+}
+async function restoreLocalBackup(id){
+ const all=await getLocalBackups(),b=all.find(x=>x.id===id);if(!b)return;
+ if(!confirm('Restaurer cette sauvegarde ? Les données actuelles seront remplacées.'))return;
+ d=Object.assign(fresh(),JSON.parse(JSON.stringify(b.data)));
+ localStorage.setItem(K,JSON.stringify(d));
+ render();
+ alert('Sauvegarde locale restaurée.');
+}
+async function deleteLocalBackup(id){
+ if(!confirm('Supprimer cette sauvegarde locale ?'))return;
+ const db=await openBackupDB();
+ await new Promise((resolve,reject)=>{const tx=db.transaction(BACKUP_STORE,'readwrite');tx.objectStore(BACKUP_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});
+ renderLocalBackups();
+}
+async function renderLocalBackups(){
+ const box=document.getElementById('localBackups'),status=document.getElementById('localBackupStatus');
+ if(!box||!status)return;
+ const all=await getLocalBackups();
+ status.textContent=all.length?`${all.length} sauvegarde${all.length>1?'s':''} locale${all.length>1?'s':''} disponible${all.length>1?'s':''}.`:'Aucune sauvegarde locale pour le moment.';
+ box.innerHTML=all.length?all.slice(0,8).map(b=>{
+  const dt=new Date(b.created);
+  const label=dt.toLocaleDateString('fr-FR')+' à '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  return `<div class="item"><div class="ico">💾</div><div class="grow"><div class="title">${b.manual?'Sauvegarde manuelle':'Sauvegarde automatique'}</div><div class="sub">${label} • ${fmtkm(b.data?.km||0)}</div><div class="row"><button class="button mini" onclick="restoreLocalBackup(${b.id})">Restaurer</button><button class="button mini danger" onclick="deleteLocalBackup(${b.id})">Supprimer</button></div></div></div>`;
+ }).join(''):'<div class="small">Créez votre première sauvegarde locale avec le bouton ci-dessus.</div>';
+}
+
 function exportData(){let b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='My_Mercedes_sauvegarde.json';a.click();URL.revokeObjectURL(a.href)}
-function importData(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{d=Object.assign(fresh(),JSON.parse(r.result));save();render();alert('Sauvegarde restaurée.')}catch(e){alert('Fichier de sauvegarde invalide.')}};r.readAsText(f)}
-render();save();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
+function importData(inp){let f=inp.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{d=Object.assign(fresh(),JSON.parse(r.result));save();render();createLocalBackup(true);alert('Sauvegarde restaurée.')}catch(e){alert('Fichier de sauvegarde invalide.')}};r.readAsText(f)}
+render();save();renderLocalBackups();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
 </script></body></html>
